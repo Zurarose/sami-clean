@@ -8,5 +8,11 @@ console.log(`Group chat ID: ${getGroupChatId()}`);
 console.log("Production: use npm run bot:webhook after deploy");
 
 bot.start({
-  allowed_updates: ["message", "chat_member", "my_chat_member"],
+  allowed_updates: [
+    "message",
+    "callback_query",
+    "chat_member",
+    "my_chat_member",
+    "chat_join_request",
+  ],
 });
