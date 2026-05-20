@@ -1,4 +1,5 @@
 import { Bot } from "grammy";
+import type { ChatMember } from "grammy/types";
 import type { User as TgUser } from "grammy/types";
 import { getBotToken, isGroupChat, mentionHtml } from "@/lib/telegram";
 import { setUserInGroup, upsertTelegramUser } from "@/lib/users";
@@ -29,6 +30,20 @@ const ACTIVE_MEMBER_STATUSES = new Set([
 const LEFT_MEMBER_STATUSES = new Set(["left", "kicked"]);
 const JOIN_PROMPT_TTL_MS = 60_000;
 const recentJoinPrompts = new Map<string, number>();
+
+function isActiveMember(member: ChatMember): boolean {
+  if (member.status === "restricted") {
+    return member.is_member;
+  }
+  return ACTIVE_MEMBER_STATUSES.has(member.status);
+}
+
+function isLeftMember(member: ChatMember): boolean {
+  if (member.status === "restricted") {
+    return !member.is_member;
+  }
+  return LEFT_MEMBER_STATUSES.has(member.status);
+}
 
 function shouldSendJoinPrompt(chatId: number, userId: number): boolean {
   const key = `${chatId}:${userId}`;
@@ -95,13 +110,11 @@ function createBot() {
     const chatId = ctx.chatMember.chat.id;
     if (!isGroupChat(chatId)) return;
 
-    const previousStatus = ctx.chatMember.old_chat_member.status;
+    const previousMember = ctx.chatMember.old_chat_member;
     const currentMember = ctx.chatMember.new_chat_member;
     if (!currentMember.user || currentMember.user.is_bot) return;
 
-    const becameActive =
-      LEFT_MEMBER_STATUSES.has(previousStatus) &&
-      ACTIVE_MEMBER_STATUSES.has(currentMember.status);
+    const becameActive = isLeftMember(previousMember) && isActiveMember(currentMember);
 
     if (becameActive) {
       await upsertTelegramUser(currentMember.user, { inGroup: false });
@@ -114,7 +127,7 @@ function createBot() {
       return;
     }
 
-    if (LEFT_MEMBER_STATUSES.has(currentMember.status)) {
+    if (isLeftMember(currentMember)) {
       await setUserInGroup(BigInt(currentMember.user.id), false);
       console.log("[bot] chat_member left:", currentMember.user.id);
     }
