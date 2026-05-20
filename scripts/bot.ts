@@ -1,9 +1,7 @@
 import "dotenv/config";
-import cron from "node-cron";
 import { Bot } from "grammy";
 import { getBotToken, getGroupChatId, isGroupChat } from "../lib/telegram";
 import { setUserInGroup, upsertTelegramUser } from "../lib/users";
-import { sendDailyReminders } from "../lib/reminders";
 
 const bot = new Bot(getBotToken());
 
@@ -73,21 +71,6 @@ bot.on("message:left_chat_member", async (ctx) => {
   const user = ctx.message.left_chat_member;
   if (!user.is_bot) {
     await setUserInGroup(BigInt(user.id), false);
-  }
-});
-
-// Daily at 09:00 server local time
-cron.schedule("0 9 * * *", async () => {
-  try {
-    const result = await sendDailyReminders();
-    if (result.totalSent > 0) {
-      console.log(
-        `[reminders] Sent total ${result.totalSent} reminder(s): ` +
-          `today=${result.today.sent}, tomorrow=${result.tomorrow.sent}`,
-      );
-    }
-  } catch (err) {
-    console.error("[reminders] Failed:", err);
   }
 });
 
