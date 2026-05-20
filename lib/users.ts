@@ -5,6 +5,12 @@ type UpsertOptions = {
   inGroup?: boolean;
 };
 
+export async function getTelegramUser(telegramId: bigint) {
+  return prisma.telegramUser.findUnique({
+    where: { telegramId },
+  });
+}
+
 export async function upsertTelegramUser(from: TgUser, options?: UpsertOptions) {
   const profile = {
     username: from.username ?? null,

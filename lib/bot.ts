@@ -2,7 +2,7 @@ import { Bot } from "grammy";
 import type { ChatMember } from "grammy/types";
 import type { User as TgUser } from "grammy/types";
 import { getBotToken, isGroupChat, mentionHtml } from "@/lib/telegram";
-import { setUserInGroup, upsertTelegramUser } from "@/lib/users";
+import { getTelegramUser, setUserInGroup, upsertTelegramUser } from "@/lib/users";
 
 function joinPromptText(users: TgUser[]): string {
   const names = users
@@ -74,15 +74,38 @@ function createBot() {
 
   bot.command("start", async (ctx) => {
     if (!ctx.from) return;
-    const inGroup = ctx.chat ? isGroupChat(ctx.chat.id) : false;
-    const user = await upsertTelegramUser(ctx.from, { inGroup });
+    const isTargetGroup = ctx.chat ? isGroupChat(ctx.chat.id) : false;
+    const existingUser = await getTelegramUser(BigInt(ctx.from.id));
+    const user = await upsertTelegramUser(
+      ctx.from,
+      isTargetGroup ? { inGroup: true } : undefined,
+    );
     const name = [user.firstName, user.lastName].filter(Boolean).join(" ");
 
-    if (inGroup) {
+    console.log("[bot] /start:", {
+      chatId: ctx.chat?.id,
+      userId: ctx.from.id,
+      firstName: ctx.from.first_name,
+      isTargetGroup,
+      inGroup: user.inGroup,
+      isNewUser: !existingUser,
+    });
+
+    if (user.inGroup) {
+      if (existingUser) {
+        await ctx.reply(
+          `Hi ${name}! You're already registered on the cleaning roster for this group.\n\n` +
+            `You will get new assignments soon. `,
+        );
+        console.log("[bot] /start already registered reply sent:", ctx.from.id);
+        return;
+      }
+
       await ctx.reply(
         `Hi ${name}! You're on the cleaning roster for this group.\n\n` +
-          `You will get new assignments soon. `
+          `You will get new assignments soon. `,
       );
+      console.log("[bot] /start roster reply sent:", ctx.from.id);
       return;
     }
 
@@ -92,12 +115,14 @@ function createBot() {
         `Telegram <b>group</b> (not here in private chat).`,
       { parse_mode: "HTML" },
     );
+    console.log("[bot] /start group prompt sent:", ctx.from.id);
   });
 
   bot.command("chatid", async (ctx) => {
     if (!ctx.from) return;
     if (ctx.chat && isGroupChat(ctx.chat.id)) {
       await upsertTelegramUser(ctx.from, { inGroup: true });
+      console.log("[bot] /chatid marked user in group:", ctx.from.id);
     }
     if (ctx.chat) {
       await ctx.reply(`Chat ID: <code>${ctx.chat.id}</code>`, {
@@ -122,6 +147,9 @@ function createBot() {
         await ctx.api.sendMessage(chatId, joinPromptText([currentMember.user]), {
           parse_mode: "HTML",
         });
+        console.log("[bot] chat_member join prompt sent:", currentMember.user.id);
+      } else {
+        console.log("[bot] chat_member join prompt skipped:", currentMember.user.id);
       }
       console.log("[bot] chat_member joined:", currentMember.user.id, currentMember.user.first_name);
       return;
@@ -147,6 +175,15 @@ function createBot() {
     const usersToPrompt = joined.filter((user) => shouldSendJoinPrompt(ctx.chat.id, user.id));
     if (usersToPrompt.length > 0) {
       await ctx.reply(joinPromptText(usersToPrompt), { parse_mode: "HTML" });
+      console.log(
+        "[bot] new_chat_members join prompt sent:",
+        usersToPrompt.map((user) => user.id),
+      );
+    } else {
+      console.log(
+        "[bot] new_chat_members join prompt skipped:",
+        joined.map((user) => user.id),
+      );
     }
   });
 
@@ -162,6 +199,9 @@ function createBot() {
       await ctx.api.sendMessage(chatId, joinPromptText([user]), {
         parse_mode: "HTML",
       });
+      console.log("[bot] chat_join_request prompt sent:", user.id);
+    } else {
+      console.log("[bot] chat_join_request prompt skipped:", user.id);
     }
   });
 
@@ -169,10 +209,27 @@ function createBot() {
     if (!ctx.chat || !isGroupChat(ctx.chat.id) || !ctx.from || ctx.from.is_bot) {
       return;
     }
+    if (ctx.message.text?.startsWith("/")) {
+      console.log("[bot] group command ignored by fallback:", {
+        chatId: ctx.chat.id,
+        userId: ctx.from.id,
+        text: ctx.message.text,
+      });
+      return;
+    }
     // Keep profile in sync; roster membership is set via /start only.
     const user = await upsertTelegramUser(ctx.from);
+    console.log("[bot] group message:", {
+      chatId: ctx.chat.id,
+      userId: ctx.from.id,
+      firstName: ctx.from.first_name,
+      inGroup: user.inGroup,
+    });
     if (!user.inGroup && shouldSendJoinPrompt(ctx.chat.id, ctx.from.id)) {
       await ctx.reply(joinPromptText([ctx.from]), { parse_mode: "HTML" });
+      console.log("[bot] group message join prompt sent:", ctx.from.id);
+    } else if (!user.inGroup) {
+      console.log("[bot] group message join prompt skipped:", ctx.from.id);
     }
   });
 
@@ -182,6 +239,7 @@ function createBot() {
     const user = ctx.message.left_chat_member;
     if (!user.is_bot) {
       await setUserInGroup(BigInt(user.id), false);
+      console.log("[bot] left_chat_member:", user.id);
     }
   });
 
