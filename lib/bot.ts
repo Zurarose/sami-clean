@@ -170,8 +170,9 @@ function createBot() {
   bot.callbackQuery(JOIN_ROSTER_CALLBACK, async (ctx) => {
     if (!ctx.from) return;
 
-    const chat = ctx.chat;
-    if (!chat || !isGroupChat(chat.id)) {
+    const chatId =
+      ctx.chat?.id ?? ctx.callbackQuery.message?.chat.id;
+    if (chatId === undefined || !isGroupChat(chatId)) {
       await ctx.answerCallbackQuery({
         text: "Open the cleaning group and tap the button there.",
         show_alert: true,
@@ -179,13 +180,24 @@ function createBot() {
       return;
     }
 
-    const result = await handleJoinRoster(ctx);
-    if (result === "joined") {
-      await ctx.answerCallbackQuery({ text: "You're on the roster! 🎉" });
-    } else if (result === "already") {
-      await ctx.answerCallbackQuery({ text: "You're already on the roster." });
-    } else {
-      await ctx.answerCallbackQuery();
+    try {
+      const result = await handleJoinRoster(ctx);
+      if (result === "joined") {
+        await ctx.answerCallbackQuery({ text: "You're on the roster! 🎉" });
+      } else if (result === "already") {
+        await ctx.answerCallbackQuery({ text: "You're already on the roster." });
+      } else {
+        await ctx.answerCallbackQuery({
+          text: "Could not join the roster. Try /start.",
+          show_alert: true,
+        });
+      }
+    } catch (error) {
+      console.error("[bot] join_roster callback failed:", error);
+      await ctx.answerCallbackQuery({
+        text: "Something went wrong. Try /start in the group.",
+        show_alert: true,
+      });
     }
   });
 

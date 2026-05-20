@@ -14,6 +14,22 @@ async function main() {
   if (!info.url) {
     console.log("\nNo webhook URL set — run: npm run bot:webhook");
   }
+
+  const required = [
+    "message",
+    "callback_query",
+    "chat_member",
+    "my_chat_member",
+    "chat_join_request",
+  ];
+  const missing = required.filter((u) => !info.allowed_updates?.includes(u));
+  if (missing.length > 0) {
+    console.warn(
+      "\n⚠️  Webhook missing update types (inline buttons need callback_query):",
+      missing.join(", "),
+    );
+    console.warn("Fix: npm run bot:webhook");
+  }
 }
 
 main().catch((err) => {

@@ -32,6 +32,7 @@ async function main() {
 
   const info = await bot.api.getWebhookInfo();
   console.log("Telegram reports URL:", info.url);
+  console.log("Allowed updates:", info.allowed_updates?.join(", ") ?? "(all)");
   if (info.last_error_message) {
     console.warn("Warning — last error:", info.last_error_message);
   }
