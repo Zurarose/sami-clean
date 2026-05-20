@@ -150,6 +150,21 @@ function createBot() {
     }
   });
 
+  bot.on("chat_join_request", async (ctx) => {
+    const chatId = ctx.chatJoinRequest.chat.id;
+    if (!isGroupChat(chatId) || ctx.chatJoinRequest.from.is_bot) return;
+
+    const user = ctx.chatJoinRequest.from;
+    await upsertTelegramUser(user, { inGroup: false });
+    console.log("[bot] chat_join_request:", user.id, user.first_name);
+
+    if (shouldSendJoinPrompt(chatId, user.id)) {
+      await ctx.api.sendMessage(chatId, joinPromptText([user]), {
+        parse_mode: "HTML",
+      });
+    }
+  });
+
   bot.on("message", async (ctx) => {
     if (!ctx.chat || !isGroupChat(ctx.chat.id) || !ctx.from || ctx.from.is_bot) {
       return;

@@ -20,7 +20,7 @@ async function main() {
   await bot.api.deleteWebhook({ drop_pending_updates: false });
   await bot.api.setWebhook(webhookUrl, {
     secret_token: secret,
-    allowed_updates: ["message", "chat_member", "my_chat_member"],
+    allowed_updates: ["message", "chat_member", "my_chat_member", "chat_join_request"],
   });
   console.log("Webhook registered:", webhookUrl);
 
