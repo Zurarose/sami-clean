@@ -18,14 +18,28 @@ function createBot() {
     const inGroup = ctx.chat ? isGroupChat(ctx.chat.id) : false;
     const user = await upsertTelegramUser(ctx.from, { inGroup });
     const name = [user.firstName, user.lastName].filter(Boolean).join(" ");
+
+    if (inGroup) {
+      await ctx.reply(
+        `Hi ${name}! You're on the cleaning roster for this group.\n\n` +
+          `You will get new assignments soon. `
+      );
+      return;
+    }
+
     await ctx.reply(
-      `Hi ${name}! You're registered for Sami Clean.\n\n` +
-        `Assignments and reminders are managed on the dashboard. ` +
-        `You'll get a group mention the day before your cleaning duty.`,
+      `Hi ${name}! You're registered.\n\n` +
+        `To appear in the assign list, send <code>/start</code> in the ` +
+        `Telegram <b>group</b> (not here in private chat).`,
+      { parse_mode: "HTML" },
     );
   });
 
   bot.command("chatid", async (ctx) => {
+    if (!ctx.from) return;
+    if (ctx.chat && isGroupChat(ctx.chat.id)) {
+      await upsertTelegramUser(ctx.from, { inGroup: true });
+    }
     if (ctx.chat) {
       await ctx.reply(`Chat ID: <code>${ctx.chat.id}</code>`, {
         parse_mode: "HTML",

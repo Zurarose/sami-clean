@@ -17,6 +17,7 @@
     "bot": "tsx scripts/bot.ts",
     "bot:webhook": "tsx scripts/set-webhook.ts",
     "bot:webhook:info": "tsx scripts/webhook-info.ts",
+    "db:fix-in-group": "tsx scripts/fix-in-group.ts",
     "reminders": "tsx scripts/reminders-once.ts",
     "postinstall": "prisma generate"
   },
