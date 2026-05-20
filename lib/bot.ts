@@ -170,7 +170,10 @@ function createBot() {
       return;
     }
     // Keep profile in sync; roster membership is set via /start only.
-    await upsertTelegramUser(ctx.from);
+    const user = await upsertTelegramUser(ctx.from);
+    if (!user.inGroup && shouldSendJoinPrompt(ctx.chat.id, ctx.from.id)) {
+      await ctx.reply(joinPromptText([ctx.from]), { parse_mode: "HTML" });
+    }
   });
 
   bot.on("message:left_chat_member", async (ctx) => {
