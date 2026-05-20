@@ -91,21 +91,21 @@ function createBot() {
       isNewUser: !existingUser,
     });
 
-    if (user.inGroup) {
-      if (existingUser) {
+    if (isTargetGroup) {
+      if (!existingUser) {
         await ctx.reply(
-          `Hi ${name}! You're already registered on the cleaning roster for this group.\n\n` +
+          `Hi ${name}! You're on the cleaning roster for this group.\n\n` +
             `You will get new assignments soon. `,
         );
-        console.log("[bot] /start already registered reply sent:", ctx.from.id);
+        console.log("[bot] /start new user reply sent:", ctx.from.id);
         return;
       }
 
       await ctx.reply(
-        `Hi ${name}! You're on the cleaning roster for this group.\n\n` +
+        `Hi ${name}! You're already in the system.\n\n` +
           `You will get new assignments soon. `,
       );
-      console.log("[bot] /start roster reply sent:", ctx.from.id);
+      console.log("[bot] /start existing user reply sent:", ctx.from.id);
       return;
     }
 
