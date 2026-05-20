@@ -131,6 +131,32 @@ WEBHOOK_BASE_URL=https://your-app.vercel.app TELEGRAM_WEBHOOK_SECRET=your-secret
 
 **Alternative:** run `npm run bot` on Railway/Render if you prefer polling instead of webhooks.
 
+### Webhook troubleshooting
+
+Check what Telegram sees:
+
+```bash
+npm run bot:webhook:info
+```
+
+Look at `last_error_message`. Common issues:
+
+| Error | Fix |
+|-------|-----|
+| `404 Not Found` | Redeploy Vercel — `/api/telegram/webhook` is not live yet |
+| `401` / `403` | `TELEGRAM_WEBHOOK_SECRET` must match on Vercel and when you ran `bot:webhook` |
+| No `url` in output | Run `npm run bot:webhook` again |
+
+After a new deploy, re-register the webhook:
+
+```bash
+npm run bot:webhook
+```
+
+**Test in Telegram:** use `/chatid` in the group (easier than `/start`). In groups you may need `/chatid@YourBotUsername`.
+
+**Note:** `npm run bot:webhook` only registers the URL — it does not deploy code. Push to git → Vercel deploy → then `bot:webhook`.
+
 ## Scripts
 
 | Command | Description |

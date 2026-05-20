@@ -17,11 +17,18 @@ if (!secret) {
 const webhookUrl = `${baseUrl}/api/telegram/webhook`;
 
 async function main() {
+  await bot.api.deleteWebhook({ drop_pending_updates: false });
   await bot.api.setWebhook(webhookUrl, {
     secret_token: secret,
     allowed_updates: ["message", "chat_member", "my_chat_member"],
   });
   console.log("Webhook registered:", webhookUrl);
+
+  const info = await bot.api.getWebhookInfo();
+  console.log("Telegram reports URL:", info.url);
+  if (info.last_error_message) {
+    console.warn("Warning — last error:", info.last_error_message);
+  }
 }
 
 main().catch((err) => {

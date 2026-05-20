@@ -16,6 +16,7 @@
     "db:studio": "prisma studio",
     "bot": "tsx scripts/bot.ts",
     "bot:webhook": "tsx scripts/set-webhook.ts",
+    "bot:webhook:info": "tsx scripts/webhook-info.ts",
     "reminders": "tsx scripts/reminders-once.ts",
     "postinstall": "prisma generate"
   },

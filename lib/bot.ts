@@ -15,7 +15,8 @@ function createBot() {
 
   bot.command("start", async (ctx) => {
     if (!ctx.from) return;
-    const user = await upsertTelegramUser(ctx.from);
+    const inGroup = ctx.chat ? isGroupChat(ctx.chat.id) : false;
+    const user = await upsertTelegramUser(ctx.from, { inGroup });
     const name = [user.firstName, user.lastName].filter(Boolean).join(" ");
     await ctx.reply(
       `Hi ${name}! You're registered for Sami Clean.\n\n` +
