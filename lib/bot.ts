@@ -13,6 +13,10 @@ const LEFT_MEMBER_STATUSES = new Set(["left", "kicked"]);
 function createBot() {
   const bot = new Bot(getBotToken());
 
+  bot.catch((err) => {
+    console.error("[bot]", err);
+  });
+
   bot.command("start", async (ctx) => {
     if (!ctx.from) return;
     const inGroup = ctx.chat ? isGroupChat(ctx.chat.id) : false;
@@ -48,18 +52,21 @@ function createBot() {
   });
 
   bot.on("chat_member", async (ctx) => {
-    if (!isGroupChat(ctx.chat.id)) return;
+    const chatId = ctx.chatMember.chat.id;
+    if (!isGroupChat(chatId)) return;
 
     const member = ctx.chatMember.new_chat_member;
     if (!member.user || member.user.is_bot) return;
 
     if (ACTIVE_MEMBER_STATUSES.has(member.status)) {
       await upsertTelegramUser(member.user, { inGroup: true });
+      console.log("[bot] chat_member joined:", member.user.id, member.user.first_name);
       return;
     }
 
     if (LEFT_MEMBER_STATUSES.has(member.status)) {
       await setUserInGroup(BigInt(member.user.id), false);
+      console.log("[bot] chat_member left:", member.user.id);
     }
   });
 
@@ -69,6 +76,7 @@ function createBot() {
     for (const user of ctx.message.new_chat_members) {
       if (!user.is_bot) {
         await upsertTelegramUser(user, { inGroup: true });
+        console.log("[bot] new_chat_members:", user.id, user.first_name);
       }
     }
   });
