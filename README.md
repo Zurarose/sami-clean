@@ -7,7 +7,7 @@ Cleaning schedule dashboard with Telegram reminders for **today** and **tomorrow
 - **Next.js** — dashboard + API
 - **Prisma + PostgreSQL** (Vercel Postgres) — users, places, assignments
 - **grammY** — Telegram bot (group membership sync only)
-- **Vercel Cron** — daily reminders at 09:00 UTC (`vercel.json`)
+- **Vercel Cron** — daily reminders at 09:00 JST (`vercel.json`; `0 0 * * *` UTC)
 
 ## Features
 
@@ -105,7 +105,7 @@ Header alternative: `Authorization: Bearer YOUR_CRON_SECRET`
    - `CRON_SECRET` (required in production)
 4. Deploy. The build runs `prisma migrate deploy` via `vercel.json`.
 
-Cron runs at **09:00 UTC** daily (`vercel.json`). Set `CRON_SECRET` in Vercel env — Vercel sends it as `Authorization: Bearer <CRON_SECRET>` automatically.
+Cron runs at **09:00 Japan time (JST)** daily — Vercel uses UTC, so the schedule is `0 0 * * *` (00:00 UTC). Set `CRON_SECRET` in Vercel env — Vercel sends it as `Authorization: Bearer <CRON_SECRET>` automatically.
 
 Do **not** enable a second cron in the bot process; that would send duplicate reminders.
 
