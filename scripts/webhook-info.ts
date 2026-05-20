@@ -21,8 +21,9 @@ async function main() {
     "chat_member",
     "my_chat_member",
     "chat_join_request",
-  ];
-  const missing = required.filter((u) => !info.allowed_updates?.includes(u));
+  ] as const;
+  const allowed = new Set(info.allowed_updates ?? []);
+  const missing = required.filter((u) => !allowed.has(u));
   if (missing.length > 0) {
     console.warn(
       "\n⚠️  Webhook missing update types (inline buttons need callback_query):",
