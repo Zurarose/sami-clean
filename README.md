@@ -57,13 +57,13 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-**Bot** (terminal 2 — required for group member sync):
+**Bot (local polling)** — optional for local dev:
 
 ```bash
 npm run bot
 ```
 
-The bot marks users as active when they post in the group or join. `/start` in DM registers the user but does not add them to the assign list until they are in the group.
+In production, use the Vercel webhook (`npm run bot:webhook` after deploy). The bot marks users as active when they post in the group or join.
 
 ## Telegram setup
 
@@ -109,20 +109,27 @@ Cron runs at **09:00 UTC** daily (`vercel.json`). Set `CRON_SECRET` in Vercel en
 
 Do **not** enable a second cron in the bot process; that would send duplicate reminders.
 
-### Telegram bot (separate host)
+### Telegram bot (webhook on Vercel)
 
-The bot **cannot** run on Vercel (long-running process). Run it on Railway, Render, Fly.io, or a VPS with the **same** env vars:
+Long-running `bot.start()` polling does **not** work on Vercel. Use a **webhook** instead — Telegram POSTs updates to your app.
+
+1. Add env vars on Vercel:
+   - `WEBHOOK_BASE_URL` — `https://your-app.vercel.app` (no trailing slash)
+   - `TELEGRAM_WEBHOOK_SECRET` — random secret string
+2. Deploy the app (includes `app/api/telegram/webhook`).
+3. Register the webhook once:
 
 ```bash
-npm run bot
+WEBHOOK_BASE_URL=https://your-app.vercel.app TELEGRAM_WEBHOOK_SECRET=your-secret npm run bot:webhook
 ```
 
-| Runs on Vercel | Runs elsewhere |
+| Runs on Vercel | Local dev only |
 |----------------|----------------|
-| Dashboard + API | `npm run bot` (membership sync only) |
-| Daily reminders via `/api/cron/reminders` | — |
+| Dashboard + API | `npm run bot` (polling) |
+| `/api/telegram/webhook` | — |
+| `/api/cron/reminders` | — |
 
-If the bot is not deployed, reminders still work via Vercel Cron, but group membership will not stay in sync.
+**Alternative:** run `npm run bot` on Railway/Render if you prefer polling instead of webhooks.
 
 ## Scripts
 
@@ -131,7 +138,8 @@ If the bot is not deployed, reminders still work via Vercel Cron, but group memb
 | `npm run dev` | Start dashboard (dev) |
 | `npm run build` | Production build |
 | `npm run start` | Start dashboard (prod) |
-| `npm run bot` | Telegram bot (membership sync) |
+| `npm run bot` | Telegram bot, polling (local dev) |
+| `npm run bot:webhook` | Register Telegram webhook (production) |
 | `npm run reminders` | Send today + tomorrow reminders once |
 | `npm run db:deploy` | Apply migrations (production) |
 | `npm run db:migrate` | Create/apply migrations (development) |
