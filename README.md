@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sami Clean
 
-## Getting Started
+Cleaning schedule dashboard with Telegram reminders (1 day before duty).
 
-First, run the development server:
+## Stack
+
+- **Next.js** — dashboard + API
+- **Prisma + SQLite** — users, places, assignments
+- **grammY** — Telegram bot (register members, send @mentions)
+- **node-cron** — daily reminder job (09:00 server time)
+
+## Setup
+
+1. Copy env file and fill values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | `file:./dev.db` (default) |
+| `TELEGRAM_BOT_TOKEN` | From [@BotFather](https://t.me/BotFather) |
+| `TELEGRAM_GROUP_CHAT_ID` | Supergroup ID (use `/chatid` in the group) |
+| `CRON_SECRET` | Optional, for `/api/cron/reminders` |
+
+2. Create DB:
+
+```bash
+npm run db:migrate
+```
+
+3. Run the bot (registers users on `/start` and when they join the group):
+
+```bash
+npm run bot
+```
+
+4. Run the dashboard:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Telegram
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Use a **supergroup** (not a broadcast channel).
+- Add the bot as a member; it posts reminders to `TELEGRAM_GROUP_CHAT_ID`.
+- Members run `/start` in DM or join the group to appear in the dashboard.
+- Reminders mention users via `tg://user?id=…` (works without @username).
 
-## Learn More
+## Manual reminder test
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run reminders
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Or hit `GET /api/cron/reminders?secret=YOUR_CRON_SECRET` (for Vercel Cron / external scheduler).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dashboard |
+| `npm run bot` | Bot + daily cron |
+| `npm run reminders` | Send tomorrow's reminders once |
+| `npm run db:studio` | Prisma Studio |
